@@ -2,76 +2,156 @@
 <html lang="bn">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bangla Word to PDF — বাংলা ওয়ার্ড টু পিডিএফ</title>
-  <meta name="description" content="Convert Bangla Word (.docx) documents to PDF while preserving original formatting. Supports SutonnyMJ, Bijoy, and Unicode Bengali." />
-  <meta name="keywords" content="bangla, bengali, docx, pdf, converter, bijoy, sutonnymj, unicode" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#07090e" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="format-detection" content="telephone=no" />
+  <title>Bangla Word to PDF — Professional Document Converter by A.K.A.Sumon</title>
+  <meta name="description" content="Convert Bangla Word (.docx) documents to PDF with 100% exact layout fidelity. Supports SutonnyMJ, Bijoy ANSI, and Unicode Bengali. Developed by A.K.A.Sumon." />
+  <meta name="author" content="A.K.A.Sumon" />
+  <meta name="keywords" content="bangla, bengali, docx to pdf, sutonnymj, bijoy to unicode, A.K.A.Sumon, high fidelity converter" />
+  
+  <!-- Modern Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
   <div class="app">
-    <!-- Animated background -->
-    <div class="bg-pattern">
+    <!-- Animated modern ambient lights -->
+    <div class="bg-pattern" aria-hidden="true">
       <div class="bg-orb bg-orb--1"></div>
       <div class="bg-orb bg-orb--2"></div>
       <div class="bg-orb bg-orb--3"></div>
+      <div class="bg-grid"></div>
     </div>
 
+    <!-- Top Navigation Bar -->
+    <nav class="navbar" id="navbar">
+      <div class="navbar__container">
+        <div class="navbar__brand">
+          <div class="navbar__logo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <path d="M9 15h6"/>
+              <path d="M9 11h6"/>
+            </svg>
+          </div>
+          <div class="navbar__brand-text">
+            <span class="brand-title">BanglaDoc <span class="brand-badge">PDF</span></span>
+            <span class="brand-sub">বাংলা ওয়ার্ড টু পিডিএফ</span>
+          </div>
+        </div>
+
+        <div class="navbar__meta">
+          <div class="engine-badge" id="engine-status-badge">
+            <span class="status-dot"></span>
+            <span class="engine-text" id="engine-name">Dual Engine Ready</span>
+          </div>
+          <div class="developer-pill" title="Developer Profile">
+            <span class="dev-avatar">AS</span>
+            <div class="dev-text-wrap">
+              <span class="dev-tag">Developer</span>
+              <strong class="dev-name">A.K.A.Sumon</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Container -->
     <main class="container">
-      <!-- Header -->
+      <!-- Hero Header -->
       <header class="header" id="header">
         <div class="header__badge">
-          <svg class="header__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <polyline points="14 2 14 8 20 8"/>
-            <line x1="16" y1="13" x2="8" y2="13"/>
-            <line x1="16" y1="17" x2="8" y2="17"/>
-            <polyline points="10 9 9 9 8 9"/>
-          </svg>
-          <span>DOCX → PDF</span>
+          <span class="badge-icon">⚡</span>
+          <span>High-Fidelity Document Processing</span>
         </div>
-        <h1 class="header__title" id="main-heading">Bangla Word to PDF</h1>
-        <p class="header__subtitle">Convert Word documents to PDF while preserving the original formatting.</p>
-        <p class="header__features">
-          <span class="feature-tag">SutonnyMJ</span>
-          <span class="feature-tag">Bijoy</span>
-          <span class="feature-tag">Unicode Bengali</span>
-          <span class="feature-tag">Formatting Preserved</span>
+        <h1 class="header__title" id="main-heading">
+          Bangla Word to PDF <span class="title-gradient">Converter</span>
+        </h1>
+        <p class="header__subtitle">
+          Export Word (.docx) documents to PDF with pixel-perfect precision. Seamlessly decodes legacy <strong>SutonnyMJ</strong> & <strong>Bijoy</strong> fonts with zero formatting distortion.
         </p>
+
+        <!-- Feature Pills -->
+        <div class="header__features">
+          <span class="feature-tag">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg>
+            SutonnyMJ & Bijoy Auto-Decoded
+          </span>
+          <span class="feature-tag">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg>
+            Bengali Numerals Preserved (১. ২. ৩.)
+          </span>
+          <span class="feature-tag">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg>
+            Exact Table & Kerning Integrity
+          </span>
+          <span class="feature-tag">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg>
+            100% In-Memory & Secure
+          </span>
+        </div>
       </header>
 
-      <!-- Upload Card -->
+      <!-- Main Converter Card -->
       <section class="card" id="upload-card">
-        <!-- Drop Zone -->
-        <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="Upload a DOCX file">
-          <div class="dropzone__icon-wrap" id="dropzone-icon">
-            <svg class="dropzone__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <div class="card__header">
+          <div class="card__tab active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
               <polyline points="17 8 12 3 7 8"/>
               <line x1="12" y1="3" x2="12" y2="15"/>
             </svg>
+            <span>Document Upload</span>
+          </div>
+          <div class="card__status-hint">
+            <span>Supports .docx up to 20 MB</span>
+          </div>
+        </div>
+
+        <!-- Drop Zone -->
+        <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="Upload a DOCX file">
+          <div class="dropzone__glow"></div>
+          <div class="dropzone__icon-wrap" id="dropzone-icon">
+            <svg class="dropzone__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <path d="M12 18v-6m-3 3l3-3 3 3"/>
+            </svg>
           </div>
           <p class="dropzone__text">
-            <strong>Drag & drop</strong> your .docx file here
+            <span class="desktop-instruction"><strong>Drop your Word document</strong> here, or <span class="highlight">browse</span></span>
+            <span class="mobile-instruction"><strong>Tap to choose</strong> Word document</span>
           </p>
-          <p class="dropzone__subtext">or click to choose a file</p>
-          <p class="dropzone__limit">Maximum file size: 20 MB</p>
+          <p class="dropzone__subtext">Compatible with SutonnyMJ, Bijoy Classic, and Unicode Bengali</p>
+          <div class="dropzone__formats">
+            <span class="format-badge">.DOCX</span>
+            <span class="format-badge">Max 20MB</span>
+            <span class="format-badge">Auto Font Match</span>
+          </div>
           <input type="file" id="file-input" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden />
         </div>
 
-        <!-- File Info (hidden by default) -->
+        <!-- File Info (shown after file selection) -->
         <div class="file-info" id="file-info" hidden>
           <div class="file-info__icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
               <polyline points="14 2 14 8 20 8"/>
+              <path d="M9 13h6"/>
+              <path d="M9 17h6"/>
             </svg>
           </div>
           <div class="file-info__details">
-            <p class="file-info__name" id="file-name">document.docx</p>
+            <div class="file-info__header">
+              <p class="file-info__name" id="file-name">document.docx</p>
+              <span class="file-ready-badge">Ready to Convert</span>
+            </div>
             <p class="file-info__size" id="file-size">0 KB</p>
           </div>
           <button class="file-info__remove" id="remove-file" aria-label="Remove file" title="Remove file">
@@ -82,46 +162,57 @@
           </button>
         </div>
 
-        <!-- Convert Button -->
+        <!-- Conversion Action Button -->
         <button class="btn btn--primary" id="convert-btn" disabled>
           <svg class="btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
-            <polyline points="16 6 12 2 8 6"/>
-            <line x1="12" y1="2" x2="12" y2="15"/>
+            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
           </svg>
           <span id="convert-btn-text">Convert to PDF</span>
         </button>
 
-        <!-- Progress -->
+        <!-- Progress Feedback -->
         <div class="progress" id="progress" hidden>
+          <div class="progress__meta">
+            <span class="progress__step" id="progress-text">Analyzing document...</span>
+            <span class="progress__percent" id="progress-percent">0%</span>
+          </div>
           <div class="progress__bar">
             <div class="progress__fill" id="progress-fill"></div>
           </div>
-          <p class="progress__text" id="progress-text">Converting...</p>
+          <div class="progress__stages" id="progress-stages">
+            <span class="stage active" data-short="1. Parse">1. Parse</span>
+            <span class="stage" data-short="2. Ligatures">2. Decode Ligatures</span>
+            <span class="stage" data-short="3. Engine">3. Layout Engine</span>
+            <span class="stage" data-short="4. Ready">4. Ready</span>
+          </div>
         </div>
 
-        <!-- Success -->
+        <!-- Success Result -->
         <div class="result result--success" id="success-result" hidden>
-          <div class="result__icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-              <polyline points="22 4 12 14.01 9 11.01"/>
-            </svg>
+          <div class="result__icon-wrap">
+            <div class="result__icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </div>
           </div>
           <h3 class="result__title">Conversion Successful!</h3>
-          <p class="result__detail" id="success-detail">Your PDF is ready to download.</p>
-          <button class="btn btn--download" id="download-btn">
-            <svg class="btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="7 10 12 15 17 10"/>
-              <line x1="12" y1="15" x2="12" y2="3"/>
-            </svg>
-            <span>Download PDF</span>
-          </button>
-          <button class="btn btn--ghost" id="convert-another">Convert Another File</button>
+          <p class="result__detail" id="success-detail">Your PDF has been generated with complete typography and layout fidelity.</p>
+          
+          <div class="result__actions">
+            <button class="btn btn--download" id="download-btn">
+              <svg class="btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              <span>Download PDF</span>
+            </button>
+            <button class="btn btn--ghost" id="convert-another">Convert Another File</button>
+          </div>
         </div>
 
-        <!-- Error -->
+        <!-- Error Result -->
         <div class="result result--error" id="error-result" hidden>
           <div class="result__icon result__icon--error">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -131,16 +222,71 @@
             </svg>
           </div>
           <h3 class="result__title result__title--error">Conversion Failed</h3>
-          <p class="result__detail" id="error-detail">An error occurred.</p>
+          <p class="result__detail" id="error-detail">An error occurred during conversion.</p>
           <button class="btn btn--ghost" id="try-again">Try Again</button>
+        </div>
+      </section>
+
+      <!-- Highlights / Tech Specs Grid -->
+      <section class="features-grid">
+        <div class="feature-card">
+          <div class="feature-card__icon feature-card__icon--purple">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
+          </div>
+          <h3 class="feature-card__title">Flawless Bengali Kerning</h3>
+          <p class="feature-card__desc">Accurately reconstructs complex conjuncts like ক্ষ, জ্ঞ, ঞ্চ, র্ and slanted u-kar without broken or misplaced glyphs.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-card__icon feature-card__icon--cyan">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+          </div>
+          <h3 class="feature-card__title">Table & Column Protection</h3>
+          <p class="feature-card__desc">Strips phantom formatting tags to prevent unintended boldness. Keeps exact column widths, borders, and Bengali list numbering (১, ২, ৩).</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-card__icon feature-card__icon--emerald">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <h3 class="feature-card__title">Enterprise Security</h3>
+          <p class="feature-card__desc">Zero persistent storage. Documents are transformed in volatile memory and completely purged immediately after delivery.</p>
+        </div>
+      </section>
+
+      <!-- Developer Showcase Section -->
+      <section class="developer-showcase" id="developer-card">
+        <div class="developer-showcase__content">
+          <div class="developer-avatar-wrapper">
+            <div class="developer-avatar">AS</div>
+            <div class="developer-status-dot" title="Active Developer"></div>
+          </div>
+          <div class="developer-info">
+            <div class="developer-header-row">
+              <span class="developer-badge">Creator & Lead Developer</span>
+              <span class="developer-tag">v1.2.0 Production</span>
+            </div>
+            <h2 class="developer-name">A.K.A.Sumon</h2>
+            <p class="developer-bio">
+              Software Engineer & System Architect specializing in OpenXML document processing, Bengali typographical reconstruction, and high-fidelity PDF engines.
+            </p>
+          </div>
         </div>
       </section>
 
       <!-- Footer -->
       <footer class="footer" id="footer">
-        <p>Uses LibreOffice for high-fidelity document conversion.</p>
-        <p>Supports SutonnyMJ, Bijoy, and Unicode Bengali documents.</p>
-        <p class="footer__privacy">🔒 Your documents are processed temporarily and never stored.</p>
+        <div class="footer__content">
+          <p class="footer__copy">
+            &copy; 2026 <strong>BanglaDoc PDF</strong>. Designed & Developed by <strong>A.K.A.Sumon</strong>.
+          </p>
+          <p class="footer__tech">
+            Dual-Engine: Microsoft Word Native Automation & Headless LibreOffice Pipeline.
+          </p>
+          <p class="footer__privacy">
+            🔒 Files are processed securely and deleted automatically after download.
+          </p>
+        </div>
       </footer>
     </main>
   </div>

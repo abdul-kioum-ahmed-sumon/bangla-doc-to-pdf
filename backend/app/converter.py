@@ -181,7 +181,7 @@ def to_bengali_number(n: int) -> str:
 
 
 def _set_run_font(run: Run, replacement_font: str) -> None:
-    """Set the font of a run across OpenXML font attributes."""
+    """Set the font of a run across OpenXML font attributes and synchronize bold/italic."""
     run.font.name = replacement_font
     rpr = run._element.find(qn("w:rPr"))
     if rpr is not None:
@@ -199,6 +199,47 @@ def _set_run_font(run: Run, replacement_font: str) -> None:
                 },
             )
             rpr.insert(0, rfonts)
+
+        # Synchronize complex script bold (w:bCs) with Latin bold (w:b).
+        # In legacy Bijoy documents (SutonnyMJ), Word uses w:b for Latin/ANSI fonts.
+        # Word often automatically inserts phantom <w:bCs/> even when the text is regular.
+        # When converted to Unicode Bengali (a Complex Script), <w:bCs/> causes regular text
+        # to render as bold! Therefore, w:bCs must match w:b.
+        b_elem = rpr.find(qn("w:b"))
+        is_bold = b_elem is not None and b_elem.get(qn("w:val"), "true").lower() not in ("0", "false", "off")
+        bcs_elem = rpr.find(qn("w:bCs"))
+        if not is_bold and bcs_elem is not None:
+            rpr.remove(bcs_elem)
+        elif is_bold and bcs_elem is None:
+            rpr.append(rpr.makeelement(qn("w:bCs")))
+
+        # Same for italic (w:iCs vs w:i)
+        i_elem = rpr.find(qn("w:i"))
+        is_italic = i_elem is not None and i_elem.get(qn("w:val"), "true").lower() not in ("0", "false", "off")
+        ics_elem = rpr.find(qn("w:iCs"))
+        if not is_italic and ics_elem is not None:
+            rpr.remove(ics_elem)
+        elif is_italic and ics_elem is None:
+            rpr.append(rpr.makeelement(qn("w:iCs")))
+
+
+def _clean_phantom_complex_script_styles(paragraphs: list[Paragraph]) -> None:
+    """Ensure complex script bold/italic match the intended style across all runs."""
+    for p in paragraphs:
+        for run in p.runs:
+            rpr = run._element.find(qn("w:rPr"))
+            if rpr is not None:
+                b_elem = rpr.find(qn("w:b"))
+                is_bold = b_elem is not None and b_elem.get(qn("w:val"), "true").lower() not in ("0", "false", "off")
+                bcs_elem = rpr.find(qn("w:bCs"))
+                if not is_bold and bcs_elem is not None:
+                    rpr.remove(bcs_elem)
+
+                i_elem = rpr.find(qn("w:i"))
+                is_italic = i_elem is not None and i_elem.get(qn("w:val"), "true").lower() not in ("0", "false", "off")
+                ics_elem = rpr.find(qn("w:iCs"))
+                if not is_italic and ics_elem is not None:
+                    rpr.remove(ics_elem)
 
 
 def _convert_run_text(
@@ -344,6 +385,19 @@ def convert_bijoy_in_docx(
             total_converted += _process_paragraphs(section.header.paragraphs, doc_default, target_font)
         if section.footer:
             total_converted += _process_paragraphs(section.footer.paragraphs, doc_default, target_font)
+
+    # Clean up phantom complex script bold/italic attributes across the entire document
+    # so regular text never renders as bold
+    _clean_phantom_complex_script_styles(doc.paragraphs)
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                _clean_phantom_complex_script_styles(cell.paragraphs)
+    for section in doc.sections:
+        if section.header:
+            _clean_phantom_complex_script_styles(section.header.paragraphs)
+        if section.footer:
+            _clean_phantom_complex_script_styles(section.footer.paragraphs)
 
     doc.save(str(output_path))
     return {

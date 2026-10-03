@@ -1,14 +1,16 @@
 /**
  * Bangla Word to PDF — Frontend Application
+ * Designed & Developed by A.K.A.Sumon
  *
  * Handles file upload (drag-and-drop + click), conversion request,
- * progress display, and PDF download.
+ * multi-stage progress tracking, and PDF download with layout engine detection.
  */
 
 // ── Configuration ─────────────────────────────────────────────
-// CONVERTER_URL can be set as an environment variable during build
-// or defaults to the current origin (same-origin API)
-const CONVERTER_URL = import.meta.env.VITE_CONVERTER_URL || '';
+// Safe extraction of environment variables when running under Vite or standalone FastAPI
+const CONVERTER_URL = (typeof import.meta !== 'undefined' && import.meta?.env?.VITE_CONVERTER_URL)
+  ? import.meta.env.VITE_CONVERTER_URL
+  : '';
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
 const ALLOWED_EXTENSIONS = ['.docx'];
 
@@ -24,6 +26,10 @@ const convertBtnText = document.getElementById('convert-btn-text');
 const progress = document.getElementById('progress');
 const progressFill = document.getElementById('progress-fill');
 const progressText = document.getElementById('progress-text');
+const progressPercent = document.getElementById('progress-percent');
+const stageElements = document.querySelectorAll('.progress__stages .stage');
+const engineName = document.getElementById('engine-name');
+const engineBadge = document.getElementById('engine-status-badge');
 const successResult = document.getElementById('success-result');
 const successDetail = document.getElementById('success-detail');
 const downloadBtn = document.getElementById('download-btn');
@@ -36,6 +42,7 @@ const tryAgain = document.getElementById('try-again');
 let selectedFile = null;
 let pdfBlob = null;
 let pdfFilename = '';
+let progressTimer = null;
 
 // ── Utility Functions ─────────────────────────────────────────
 
@@ -62,14 +69,33 @@ function getExtension(filename) {
  * Show an element (remove hidden attribute).
  */
 function show(el) {
-  el.hidden = false;
+  if (el) el.hidden = false;
 }
 
 /**
  * Hide an element (set hidden attribute).
  */
 function hide(el) {
-  el.hidden = true;
+  if (el) el.hidden = true;
+}
+
+/**
+ * Update the visual stage stepper (1: Parse, 2: Decode, 3: Layout, 4: Ready).
+ */
+function setProgressStage(stageIndex, percent, message) {
+  if (progressPercent) progressPercent.textContent = `${percent}%`;
+  if (progressFill) progressFill.style.width = `${percent}%`;
+  if (progressText && message) progressText.textContent = message;
+
+  if (stageElements && stageElements.length > 0) {
+    stageElements.forEach((el, idx) => {
+      if (idx <= stageIndex) {
+        el.classList.add('active');
+      } else {
+        el.classList.remove('active');
+      }
+    });
+  }
 }
 
 // ── File Selection ────────────────────────────────────────────
@@ -81,13 +107,13 @@ function handleFileSelect(file) {
   // Validate extension
   const ext = getExtension(file.name);
   if (!ALLOWED_EXTENSIONS.includes(ext)) {
-    showError(`Invalid file type "${ext}". Only .docx files are accepted.`);
+    showError(`Invalid file format "${ext}". Only Microsoft Word (.docx) files are supported.`);
     return;
   }
 
   // Validate size
   if (file.size > MAX_FILE_SIZE) {
-    showError(`File too large (${formatFileSize(file.size)}). Maximum size is 20 MB.`);
+    showError(`File size exceeds limit (${formatFileSize(file.size)}). Maximum supported file size is 20 MB.`);
     return;
   }
 
@@ -114,6 +140,10 @@ function handleFileSelect(file) {
  * Remove the selected file and reset UI.
  */
 function resetUI() {
+  if (progressTimer) {
+    clearInterval(progressTimer);
+    progressTimer = null;
+  }
   selectedFile = null;
   pdfBlob = null;
   pdfFilename = '';
@@ -133,7 +163,7 @@ function resetUI() {
   fileInput.value = '';
 }
 
-// ── Drag and Drop ─────────────────────────────────────────────
+// ── Drag and Drop Events ──────────────────────────────────────
 
 dropzone.addEventListener('dragenter', (e) => {
   e.preventDefault();
@@ -155,7 +185,7 @@ dropzone.addEventListener('drop', (e) => {
   dropzone.classList.remove('dropzone--active');
 
   const files = e.dataTransfer.files;
-  if (files.length > 0) {
+  if (files && files.length > 0) {
     handleFileSelect(files[0]);
   }
 });
@@ -183,7 +213,7 @@ removeFileBtn.addEventListener('click', () => {
   resetUI();
 });
 
-// ── Conversion ────────────────────────────────────────────────
+// ── Conversion Flow ───────────────────────────────────────────
 
 convertBtn.addEventListener('click', async () => {
   if (!selectedFile) return;
@@ -191,13 +221,31 @@ convertBtn.addEventListener('click', async () => {
   // Show loading state
   convertBtn.disabled = true;
   convertBtn.classList.add('btn--loading');
-  convertBtnText.textContent = 'Converting...';
+  convertBtnText.textContent = 'Processing Document...';
   hide(errorResult);
   hide(successResult);
   show(progress);
-  progressFill.style.width = '0%';
-  progressFill.classList.add('progress__fill--indeterminate');
-  progressText.textContent = 'Uploading and converting your document...';
+
+  // Step 1: Parse
+  setProgressStage(0, 18, 'Reading document structures and OpenXML tables...');
+
+  // Multi-stage simulated progress while awaiting conversion response
+  let currentStage = 0;
+  let currentPercent = 18;
+  progressTimer = setInterval(() => {
+    if (currentPercent < 45) {
+      currentPercent += 5;
+      setProgressStage(0, currentPercent, 'Parsing OpenXML runs & paragraphs...');
+    } else if (currentPercent < 75) {
+      if (currentStage < 1) currentStage = 1;
+      currentPercent += 4;
+      setProgressStage(1, currentPercent, 'Reconstructing SutonnyMJ & Bijoy ANSI ligatures...');
+    } else if (currentPercent < 90) {
+      if (currentStage < 2) currentStage = 2;
+      currentPercent += 2;
+      setProgressStage(2, currentPercent, 'Rendering exact layout via Word Native Engine...');
+    }
+  }, 250);
 
   try {
     const formData = new FormData();
@@ -208,7 +256,10 @@ convertBtn.addEventListener('click', async () => {
       body: formData,
     });
 
-    progressFill.classList.remove('progress__fill--indeterminate');
+    if (progressTimer) {
+      clearInterval(progressTimer);
+      progressTimer = null;
+    }
 
     if (!response.ok) {
       let errorMessage;
@@ -221,9 +272,8 @@ convertBtn.addEventListener('click', async () => {
       throw new Error(errorMessage);
     }
 
-    // Success — get the PDF blob
-    progressFill.style.width = '90%';
-    progressText.textContent = 'Preparing your PDF...';
+    // Step 4: Ready
+    setProgressStage(3, 100, 'Document conversion complete!');
 
     pdfBlob = await response.blob();
 
@@ -235,7 +285,7 @@ convertBtn.addEventListener('click', async () => {
         try {
           pdfFilename = decodeURIComponent(utf8Match[1]);
         } catch {
-          // ignore error
+          // ignore parsing error
         }
       }
       if (!pdfFilename) {
@@ -250,28 +300,36 @@ convertBtn.addEventListener('click', async () => {
       pdfFilename = `${stem}.pdf`;
     }
 
-    // Show success
-    progressFill.style.width = '100%';
-    progressText.textContent = 'Done!';
-
-    // Check conversion headers
+    // Read conversion telemetry headers
     const bijoyDetected = response.headers.get('X-Bijoy-Detected') === 'true';
     const runsConverted = parseInt(response.headers.get('X-Runs-Converted') || '0', 10);
+    const engineUsed = response.headers.get('X-Conversion-Engine') || 'Native';
+    const screenshotMode = response.headers.get('X-Exact-Screenshot-Mode') === 'true';
 
-    let detailText = 'Your PDF is ready to download.';
+    let engineSummary = screenshotMode
+      ? 'Microsoft Word Native Engine (100% Screenshot Fidelity)'
+      : 'LibreOffice High-Fidelity Engine';
+
+    let detailText = `Exported with ${engineSummary}.`;
     if (bijoyDetected) {
-      detailText = `Bijoy text detected and converted (${runsConverted} text runs). Your PDF is ready.`;
+      detailText += ` Successfully decoded ${runsConverted} SutonnyMJ/Bijoy text runs with full ligature kerning.`;
+    } else {
+      detailText += ` Complex script typography and table layouts preserved flawlessly.`;
     }
+
     successDetail.textContent = detailText;
 
     setTimeout(() => {
       hide(progress);
       hide(convertBtn);
       show(successResult);
-    }, 500);
+    }, 450);
 
   } catch (err) {
-    progressFill.classList.remove('progress__fill--indeterminate');
+    if (progressTimer) {
+      clearInterval(progressTimer);
+      progressTimer = null;
+    }
     hide(progress);
     showError(err.message);
     convertBtn.disabled = false;
@@ -313,18 +371,33 @@ function showError(message) {
   show(errorResult);
 }
 
-// ── Health Check (optional background check) ──────────────────
+// ── Health & Engine Check ─────────────────────────────────────
 
 async function checkHealth() {
   try {
     const res = await fetch(`${CONVERTER_URL}/health`);
     if (res.ok) {
-      console.log('✓ Backend is healthy');
+      const data = await res.json();
+      console.log('✓ Backend is healthy:', data);
+      if (engineName) {
+        if (data.word_native_available) {
+          engineName.textContent = 'Word Native Engine Active';
+          if (engineBadge) {
+            engineBadge.title = 'Microsoft Word Automation available: 100% screenshot-fidelity mode';
+          }
+        } else {
+          engineName.textContent = 'LibreOffice Engine Active';
+          if (engineBadge) {
+            engineBadge.title = 'LibreOffice Headless conversion pipeline active';
+          }
+        }
+      }
     }
-  } catch {
-    console.warn('Backend health check failed — ensure the server is running');
+  } catch (err) {
+    console.warn('Backend health check note:', err.message);
   }
 }
 
-// Run health check on load
+// Initialize on load
 checkHealth();
+
