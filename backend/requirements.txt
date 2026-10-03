@@ -3,4 +3,4 @@ uvicorn[standard]==0.30.0
 python-multipart==0.0.9
 python-docx==1.1.2
 python-magic==0.4.27
-bijoy2unicode==1.1.0
+bijoy2unicode>=0.1.1
