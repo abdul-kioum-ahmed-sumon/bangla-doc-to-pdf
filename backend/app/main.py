@@ -13,6 +13,7 @@ Endpoints:
 from __future__ import annotations
 
 import logging
+import mimetypes
 import os
 import time
 import uuid
@@ -23,6 +24,11 @@ from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+
+# Ensure correct MIME types for stylesheet and script assets
+mimetypes.add_type("text/css", ".css")
+mimetypes.add_type("application/javascript", ".js")
+mimetypes.add_type("image/svg+xml", ".svg")
 
 from .cleanup import secure_filename, temporary_conversion_dir
 from .converter import check_font_availability, full_convert
@@ -67,7 +73,12 @@ app.add_middleware(
 
 # Serve frontend static files if present
 FRONTEND_DIR = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
+ASSETS_DIR = FRONTEND_DIR / "assets"
+
 if FRONTEND_DIR.exists():
+    if not ASSETS_DIR.exists():
+        ASSETS_DIR.mkdir(parents=True, exist_ok=True)
+    app.mount("/assets", StaticFiles(directory=str(ASSETS_DIR)), name="assets")
     app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
 
 # ── Simple in-memory rate limiter ────────────────────────────
@@ -269,3 +280,17 @@ async def serve_frontend():
             "health": "/health",
         }
     )
+
+
+@app.get("/{file_path:path}")
+async def serve_static_or_fallback(file_path: str):
+    """Serve static files directly or fallback to index.html."""
+    if FRONTEND_DIR.exists() and file_path:
+        target = (FRONTEND_DIR / file_path).resolve()
+        # Security check: prevent directory traversal
+        if str(target).startswith(str(FRONTEND_DIR.resolve())) and target.is_file():
+            return FileResponse(str(target))
+    index_path = FRONTEND_DIR / "index.html"
+    if index_path.exists():
+        return FileResponse(str(index_path))
+    raise HTTPException(status_code=404, detail="Not found")
