@@ -20,9 +20,8 @@ from docx.text.run import Run
 # ============================================================
 # Known legacy Bijoy/ANSI Bengali fonts
 # ============================================================
-# These fonts use ANSI encoding to represent Bengali characters.
-# Text in these fonts needs to be converted to Unicode before
-# PDF generation.
+# These fonts use ANSI encoding (ASCII byte mapping) to represent Bengali characters.
+# Text in these fonts needs to be converted to Unicode for Unicode-only renderers.
 
 LEGACY_BIJOY_FONTS: set[str] = {
     # SutonnyMJ family
@@ -34,41 +33,46 @@ LEGACY_BIJOY_FONTS: set[str] = {
     "SutonnyOMJ Regular",
     "SutonnySushreeMJ",
     "SutonnyBanglaOMJ",
+    "TonnyBanglaMJ",
 
-    # Nikosh family
-    "Nikosh",
-    "NikoshBAN",
-    "NikoshLight",
-    "NikoshLightBan",
-    "Nikosh Grammar",
+    # ANSI variants of other fonts
+    "KalpurushANSI",
+    "Siyam Rupali ANSI",
+    "SurmaANSI",
 
-    # Other common Bijoy fonts
+    # Other legacy Bijoy fonts
     "BanglaKontho",
     "BanglaMJ",
     "AdarshaLipiNormal",
     "AponaLohit",
     "BenSenHandwriting",
     "BenSen",
-    "Charukola Unicode",
-    "KalpurushANSI",
-    "Kalpurush",
-    "SolaimanLipi",
     "BorakMJ",
     "ChandrabatiMJ",
     "JugantorMJ",
     "KalerKanthoMJ",
     "ProthomAloMJ",
     "SaijaMJ",
-    "SurmaANSI",
     "BijoyBanlaFont",
 }
 
 # Fonts that are already Unicode Bengali - do NOT convert
 UNICODE_BENGALI_FONTS: set[str] = {
-    "Noto Sans Bengali",
-    "Noto Serif Bengali",
+    # Official Bangladesh government / Election Commission Unicode fonts
+    "Nikosh",
+    "NikoshBAN",
+    "NikoshLight",
+    "NikoshLightBan",
+    "Nikosh Grammar",
+
+    # Popular open Unicode fonts
     "Kalpurush",
     "SolaimanLipi",
+    "Siyam Rupali",
+    "Siyamrupali",
+    "Charukola Unicode",
+    "Noto Sans Bengali",
+    "Noto Serif Bengali",
     "Mukti",
     "Vrinda",
     "Shonar Bangla",
@@ -79,6 +83,24 @@ UNICODE_BENGALI_FONTS: set[str] = {
     "Likhan",
 }
 
+# Regex matching any Bengali Unicode character (U+0980 to U+09FF)
+BENGALI_UNICODE_PATTERN = re.compile(r"[\u0980-\u09FF]")
+
+
+def contains_unicode_bengali(text: str | None) -> bool:
+    """Check if a string contains any Bengali Unicode characters.
+
+    Args:
+        text: Text string to check.
+
+    Returns:
+        True if the text contains at least one Bengali Unicode code point.
+    """
+    if not text:
+        return False
+    return bool(BENGALI_UNICODE_PATTERN.search(text))
+
+
 
 def _normalize_font_name(font_name: str) -> str:
     """Normalize a font name for comparison.
@@ -88,6 +110,28 @@ def _normalize_font_name(font_name: str) -> str:
     if not font_name:
         return ""
     return re.sub(r"\s+", " ", font_name.strip())
+
+
+def is_unicode_bengali_font(font_name: str | None) -> bool:
+    """Check if a font name is a known Unicode Bengali font.
+
+    Args:
+        font_name: The font name to check.
+
+    Returns:
+        True if the font is a recognized Unicode Bengali font.
+    """
+    if not font_name:
+        return False
+    normalized = _normalize_font_name(font_name).lower()
+    # Explicit ANSI variant is legacy, not Unicode
+    if "ansi" in normalized:
+        return False
+    for uf in UNICODE_BENGALI_FONTS:
+        if uf.lower() == normalized or uf.lower() in normalized:
+            return True
+    return False
+
 
 
 def is_legacy_bijoy_font(font_name: str | None) -> bool:
@@ -103,6 +147,10 @@ def is_legacy_bijoy_font(font_name: str | None) -> bool:
         return False
 
     normalized = _normalize_font_name(font_name)
+
+    # If it is a known Unicode Bengali font, it is NOT legacy
+    if is_unicode_bengali_font(normalized):
+        return False
 
     # Check exact match
     if normalized in LEGACY_BIJOY_FONTS:
@@ -121,6 +169,31 @@ def is_legacy_bijoy_font(font_name: str | None) -> bool:
             return True
 
     return False
+
+
+def is_legacy_bijoy_run(run: Run, effective_font: str | None) -> bool:
+    """Check if a specific text run is encoded in Bijoy ANSI.
+
+    A run is only Bijoy if:
+    1. The font is a recognized legacy Bijoy font
+    2. The text is not empty
+    3. The text does NOT contain Bengali Unicode characters
+
+    Args:
+        run: The Run object.
+        effective_font: The resolved font name for this run.
+
+    Returns:
+        True if the run contains Bijoy/ANSI encoded Bengali text.
+    """
+    if not effective_font or not is_legacy_bijoy_font(effective_font):
+        return False
+    if not run.text or not run.text.strip():
+        return False
+    # If it contains Unicode Bengali characters, it's ALREADY Unicode
+    if contains_unicode_bengali(run.text):
+        return False
+    return True
 
 
 @dataclass
@@ -248,13 +321,21 @@ def detect_fonts(doc: Document) -> FontDetectionResult:
             if not font_name:
                 font_name = doc_default_font
 
-            if font_name:
+            # Content-level check: Does run contain Unicode Bengali characters?
+            has_unicode_content = bool(run.text and contains_unicode_bengali(run.text))
+
+            if has_unicode_content:
+                result.has_unicode_bengali = True
+                if font_name:
+                    result.unicode_font_names.add(font_name)
+            elif font_name:
                 if is_legacy_bijoy_font(font_name):
                     result.has_legacy_fonts = True
                     result.legacy_font_names.add(font_name)
                     result.legacy_runs += 1
-                elif font_name in UNICODE_BENGALI_FONTS:
+                elif is_unicode_bengali_font(font_name):
                     result.has_unicode_bengali = True
                     result.unicode_font_names.add(font_name)
 
     return result
+

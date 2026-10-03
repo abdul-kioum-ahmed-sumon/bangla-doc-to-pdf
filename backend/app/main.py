@@ -21,8 +21,14 @@ from pathlib import Path
 
 from urllib.parse import quote
 
-import magic
-from fastapi import FastAPI, File, HTTPException, Request, Response, UploadFile
+magic = None
+if os.name != "nt":
+    try:
+        import magic
+    except Exception:
+        magic = None
+
+from fastapi import FastAPI, File, HTTPException, Query, Request, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -33,7 +39,7 @@ mimetypes.add_type("application/javascript", ".js")
 mimetypes.add_type("image/svg+xml", ".svg")
 
 from .cleanup import secure_filename, temporary_conversion_dir
-from .converter import check_font_availability, full_convert
+from .converter import check_font_availability, full_convert, is_word_available
 
 # ── Logging ──────────────────────────────────────────────────
 logging.basicConfig(
@@ -73,15 +79,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve frontend static files if present
-FRONTEND_DIR = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
-ASSETS_DIR = FRONTEND_DIR / "assets"
+# Serve frontend static files if present (prefer built dist, fallback to src)
+FRONTEND_DIST = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
+FRONTEND_SRC = Path(__file__).resolve().parent.parent.parent / "frontend" / "src"
+FRONTEND_DIR = FRONTEND_DIST if FRONTEND_DIST.exists() else FRONTEND_SRC
 
 if FRONTEND_DIR.exists():
-    if not ASSETS_DIR.exists():
-        ASSETS_DIR.mkdir(parents=True, exist_ok=True)
-    app.mount("/assets", StaticFiles(directory=str(ASSETS_DIR)), name="assets")
+    assets_dir = FRONTEND_DIR / "assets"
+    if assets_dir.exists():
+        app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
     app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
+
 
 # ── Simple in-memory rate limiter ────────────────────────────
 _rate_limit_store: dict[str, list[float]] = {}
@@ -120,6 +128,12 @@ async def startup_event():
         status = "✓ installed" if available else "✗ not found"
         logger.info("  Font '%s': %s", font_name, status)
 
+    word_ready = is_word_available()
+    if word_ready:
+        logger.info("  Engine: Microsoft Word Native (100% exact screenshot mode enabled)")
+    else:
+        logger.info("  Engine: LibreOffice Headless")
+
 
 # ── Health Check ─────────────────────────────────────────────
 @app.get("/health")
@@ -127,13 +141,21 @@ async def health_check():
     """Health check endpoint.
 
     Returns:
-        JSON with status and system information.
+        JSON with status, system information, and available engines.
     """
     fonts = check_font_availability()
+    word_ready = is_word_available()
+    engine_name = (
+        "Microsoft Word (Native - 100% Screenshot Fidelity)"
+        if word_ready
+        else "LibreOffice Headless"
+    )
     return {
         "status": "healthy",
         "service": "bangla-doc-to-pdf",
-        "version": "1.0.0",
+        "version": "1.1.0",
+        "engine": engine_name,
+        "word_native_available": word_ready,
         "fonts": fonts,
     }
 
@@ -143,6 +165,10 @@ async def health_check():
 async def convert_docx_to_pdf(
     request: Request,
     file: UploadFile = File(..., description="A .docx file to convert to PDF"),
+    exact_mode: bool = Query(
+        True,
+        description="Preserve exact original layout like a screenshot when native engine is available",
+    ),
 ):
     """Convert a .docx file to PDF.
 
@@ -151,8 +177,8 @@ async def convert_docx_to_pdf(
 
     - Validates file extension and MIME type
     - Enforces 20 MB size limit
-    - Detects and converts Bijoy/ANSI Bengali text to Unicode
-    - Uses LibreOffice headless for PDF generation
+    - Dual-engine: Native MS Word on Windows (100% exact) or LibreOffice
+    - Detects and handles Bijoy/ANSI Bengali and Unicode Bengali
     - Cleans up all temporary files after response
 
     Raises:
@@ -195,11 +221,18 @@ async def convert_docx_to_pdf(
             detail=f"File too large. Maximum size is {MAX_FILE_SIZE // (1024 * 1024)} MB.",
         )
 
-    # ── Validate MIME type ──
-    try:
-        detected_mime = magic.from_buffer(content, mime=True)
-    except Exception:
-        detected_mime = "unknown"
+    # ── Validate MIME type safely ──
+    detected_mime = "unknown"
+    if magic is not None:
+        try:
+            detected_mime = magic.from_buffer(content, mime=True)
+        except Exception:
+            detected_mime = "unknown"
+
+    # Fallback validation: DOCX files are ZIP archives starting with PK\x03\x04
+    if detected_mime == "unknown" or detected_mime not in ALLOWED_MIMES:
+        if content.startswith(b"PK\x03\x04"):
+            detected_mime = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
     if detected_mime not in ALLOWED_MIMES:
         raise HTTPException(
@@ -217,7 +250,9 @@ async def convert_docx_to_pdf(
         input_path.write_bytes(content)
 
         try:
-            pdf_path, conversion_info = await full_convert(input_path, tmp_dir)
+            pdf_path, conversion_info = await full_convert(
+                input_path, tmp_dir, exact_mode=exact_mode
+            )
         except RuntimeError as e:
             logger.error("Conversion failed: %s", e)
             raise HTTPException(status_code=500, detail=str(e))
@@ -244,6 +279,8 @@ async def convert_docx_to_pdf(
             "Content-Disposition": f'attachment; filename="converted.pdf"; filename*=UTF-8\'\'{encoded_filename}',
             "X-Bijoy-Detected": str(conversion_info.get("bijoy_detected", False)).lower(),
             "X-Runs-Converted": str(conversion_info.get("runs_converted", 0)),
+            "X-Conversion-Engine": str(conversion_info.get("engine", "unknown")),
+            "X-Exact-Screenshot-Mode": str(conversion_info.get("exact_screenshot_mode", False)).lower(),
         },
     )
 

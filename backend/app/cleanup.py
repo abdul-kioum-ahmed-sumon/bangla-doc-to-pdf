@@ -79,7 +79,7 @@ def cleanup_file(file_path: Path) -> None:
 def secure_filename(filename: str) -> str:
     """Generate a safe filename from the original.
 
-    Removes path separators, null bytes, and other dangerous characters
+    Removes path separators, null bytes, and traversal dots
     to prevent path traversal attacks.
 
     Args:
@@ -88,14 +88,22 @@ def secure_filename(filename: str) -> str:
     Returns:
         A sanitized filename safe for filesystem use.
     """
-    # Remove path separators and null bytes
+    # Extract only the base name component first
+    filename = Path(filename).name
+
+    # Remove path separators, null bytes
     filename = filename.replace("/", "_").replace("\\", "_").replace("\0", "")
 
-    # Remove leading dots (hidden files)
-    filename = filename.lstrip(".")
+    # Remove relative path traversal sequences
+    while ".." in filename:
+        filename = filename.replace("..", "")
+
+    # Remove leading dots or underscores
+    filename = filename.lstrip("._")
 
     # If empty after sanitization, use a default
     if not filename:
         filename = "document.docx"
 
     return filename
+

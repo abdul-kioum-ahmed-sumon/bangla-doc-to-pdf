@@ -57,8 +57,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy user-provided fonts (if any)
 COPY fonts/ /app/fonts/
 RUN mkdir -p /usr/local/share/fonts/bangla && \
-    find /app/fonts -name "*.ttf" -o -name "*.otf" -o -name "*.TTF" -o -name "*.OTF" | \
-    xargs -I {} cp {} /usr/local/share/fonts/bangla/ 2>/dev/null || true && \
+    find /app/fonts -type f \( -name "*.ttf" -o -name "*.otf" -o -name "*.TTF" -o -name "*.OTF" \) -exec cp {} /usr/local/share/fonts/bangla/ \; && \
     fc-cache -fv
 
 # Copy backend code

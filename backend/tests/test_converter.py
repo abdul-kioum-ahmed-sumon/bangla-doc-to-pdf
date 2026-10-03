@@ -73,6 +73,20 @@ class TestFontDetection:
     def test_noto_sans_is_not_legacy(self):
         assert is_legacy_bijoy_font("Noto Sans Bengali") is False
 
+    def test_nikosh_is_not_legacy(self):
+        """Nikosh is a Unicode Bengali font and should NOT be flagged as legacy."""
+        assert is_legacy_bijoy_font("Nikosh") is False
+        assert is_legacy_bijoy_font("NikoshBAN") is False
+        assert is_legacy_bijoy_font("NikoshLight") is False
+
+    def test_kalpurush_is_not_legacy(self):
+        """Kalpurush is Unicode; KalpurushANSI is legacy."""
+        assert is_legacy_bijoy_font("Kalpurush") is False
+        assert is_legacy_bijoy_font("KalpurushANSI") is True
+
+    def test_solaiman_lipi_is_not_legacy(self):
+        assert is_legacy_bijoy_font("SolaimanLipi") is False
+
     def test_arial_is_not_legacy(self):
         assert is_legacy_bijoy_font("Arial") is False
 
@@ -85,6 +99,21 @@ class TestFontDetection:
     def test_case_insensitive(self):
         assert is_legacy_bijoy_font("sutonnymj") is True
         assert is_legacy_bijoy_font("SUTONNYMJ") is True
+
+    def test_contains_unicode_bengali(self):
+        from app.detector import contains_unicode_bengali
+        assert contains_unicode_bengali("আমার সোনার বাংলা") is True
+        assert contains_unicode_bengali("Avgvi †mvbvi evsjv") is False
+        assert contains_unicode_bengali("Hello 123") is False
+
+    def test_is_legacy_bijoy_run_skips_unicode(self):
+        from app.detector import is_legacy_bijoy_run
+        doc = Document()
+        p = doc.add_paragraph()
+        run_unicode = p.add_run("বাংলাদেশ")
+        run_ansi = p.add_run("evsjv‡`k")
+        assert is_legacy_bijoy_run(run_unicode, "SutonnyMJ") is False
+        assert is_legacy_bijoy_run(run_ansi, "SutonnyMJ") is True
 
     def test_detect_fonts_empty_doc(self):
         """An empty DOCX should report no legacy fonts."""

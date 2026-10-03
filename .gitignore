@@ -32,11 +32,17 @@ desktop.ini
 *.tmp
 *.temp
 
-# Font files (user must provide their own)
-fonts/*.ttf
-fonts/*.otf
-fonts/*.TTF
-fonts/*.OTF
+# Copyrighted font files (must not be publicly redistributed)
+fonts/Sutonny*.ttf
+fonts/Sutonny*.otf
+fonts/Sutonny*.TTF
+fonts/Sutonny*.OTF
+
+# Allow open-source Bengali fonts for production deployment
+!fonts/kalpurush.ttf
+!fonts/kalpurush ANSI.ttf
+!fonts/Siyamrupali.ttf
+!fonts/Siyam Rupali ANSI.ttf
 !fonts/README.md
 
 # Logs

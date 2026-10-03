@@ -88,15 +88,17 @@ GitHub Repository
 
 ## Features
 
-- ✅ **Bijoy/SutonnyMJ detection and conversion** — automatic, per-run
-- ✅ **Unicode Bengali pass-through** — no unnecessary conversion
-- ✅ **Full formatting preservation** — bold, italic, underline, font size, alignment, spacing, tables, images, headers, footers, page breaks, margins
-- ✅ **LibreOffice headless** for production-quality PDF
+- ✅ **100% Screenshot-Fidelity Native Engine** — On Windows with MS Word installed, renders using Word COM for pixel-perfect reproduction identical to Word on screen
+- ✅ **LibreOffice Headless Engine** — High-performance cross-platform conversion for Linux, Docker, and cloud deployments
+- ✅ **Bijoy/SutonnyMJ Detection & Conversion** — Automatic detection and conversion to matching Unicode typography (Kalpurush/Nikosh)
+- ✅ **Safe Unicode Bengali Pass-Through** — Content-aware text inspection ensures already-Unicode Bengali documents are never corrupted
+- ✅ **Full Formatting Preservation** — Bold, italic, underline, font size, alignment, spacing, tables, images, headers, footers, page breaks, margins
 - ✅ **Drag & drop web UI** with progress and download
 - ✅ **REST API** for programmatic access
 - ✅ **Docker-ready** with all dependencies
 - ✅ **Security** — file validation, size limits, rate limiting, temporary file cleanup
 - ✅ **Privacy** — no files are stored; everything is cleaned up after conversion
+
 
 ---
 
