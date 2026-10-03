@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+venv/
+.venv/
+
+# Build output
+frontend/dist/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Temporary files
+*.tmp
+*.temp
+
+# Font files (user must provide their own)
+fonts/*.ttf
+fonts/*.otf
+fonts/*.TTF
+fonts/*.OTF
+!fonts/README.md
+
+# Logs
+*.log

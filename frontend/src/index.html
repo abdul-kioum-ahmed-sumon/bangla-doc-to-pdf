@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bangla Word to PDF — বাংলা ওয়ার্ড টু পিডিএফ</title>
+  <meta name="description" content="Convert Bangla Word (.docx) documents to PDF while preserving original formatting. Supports SutonnyMJ, Bijoy, and Unicode Bengali." />
+  <meta name="keywords" content="bangla, bengali, docx, pdf, converter, bijoy, sutonnymj, unicode" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- Animated background -->
+    <div class="bg-pattern">
+      <div class="bg-orb bg-orb--1"></div>
+      <div class="bg-orb bg-orb--2"></div>
+      <div class="bg-orb bg-orb--3"></div>
+    </div>
+
+    <main class="container">
+      <!-- Header -->
+      <header class="header" id="header">
+        <div class="header__badge">
+          <svg class="header__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+          <span>DOCX → PDF</span>
+        </div>
+        <h1 class="header__title" id="main-heading">Bangla Word to PDF</h1>
+        <p class="header__subtitle">Convert Word documents to PDF while preserving the original formatting.</p>
+        <p class="header__features">
+          <span class="feature-tag">SutonnyMJ</span>
+          <span class="feature-tag">Bijoy</span>
+          <span class="feature-tag">Unicode Bengali</span>
+          <span class="feature-tag">Formatting Preserved</span>
+        </p>
+      </header>
+
+      <!-- Upload Card -->
+      <section class="card" id="upload-card">
+        <!-- Drop Zone -->
+        <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="Upload a DOCX file">
+          <div class="dropzone__icon-wrap" id="dropzone-icon">
+            <svg class="dropzone__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+          </div>
+          <p class="dropzone__text">
+            <strong>Drag & drop</strong> your .docx file here
+          </p>
+          <p class="dropzone__subtext">or click to choose a file</p>
+          <p class="dropzone__limit">Maximum file size: 20 MB</p>
+          <input type="file" id="file-input" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden />
+        </div>
+
+        <!-- File Info (hidden by default) -->
+        <div class="file-info" id="file-info" hidden>
+          <div class="file-info__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+          </div>
+          <div class="file-info__details">
+            <p class="file-info__name" id="file-name">document.docx</p>
+            <p class="file-info__size" id="file-size">0 KB</p>
+          </div>
+          <button class="file-info__remove" id="remove-file" aria-label="Remove file" title="Remove file">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Convert Button -->
+        <button class="btn btn--primary" id="convert-btn" disabled>
+          <svg class="btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+            <polyline points="16 6 12 2 8 6"/>
+            <line x1="12" y1="2" x2="12" y2="15"/>
+          </svg>
+          <span id="convert-btn-text">Convert to PDF</span>
+        </button>
+
+        <!-- Progress -->
+        <div class="progress" id="progress" hidden>
+          <div class="progress__bar">
+            <div class="progress__fill" id="progress-fill"></div>
+          </div>
+          <p class="progress__text" id="progress-text">Converting...</p>
+        </div>
+
+        <!-- Success -->
+        <div class="result result--success" id="success-result" hidden>
+          <div class="result__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+              <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+          </div>
+          <h3 class="result__title">Conversion Successful!</h3>
+          <p class="result__detail" id="success-detail">Your PDF is ready to download.</p>
+          <button class="btn btn--download" id="download-btn">
+            <svg class="btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            <span>Download PDF</span>
+          </button>
+          <button class="btn btn--ghost" id="convert-another">Convert Another File</button>
+        </div>
+
+        <!-- Error -->
+        <div class="result result--error" id="error-result" hidden>
+          <div class="result__icon result__icon--error">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="15" y1="9" x2="9" y2="15"/>
+              <line x1="9" y1="9" x2="15" y2="15"/>
+            </svg>
+          </div>
+          <h3 class="result__title result__title--error">Conversion Failed</h3>
+          <p class="result__detail" id="error-detail">An error occurred.</p>
+          <button class="btn btn--ghost" id="try-again">Try Again</button>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="footer" id="footer">
+        <p>Uses LibreOffice for high-fidelity document conversion.</p>
+        <p>Supports SutonnyMJ, Bijoy, and Unicode Bengali documents.</p>
+        <p class="footer__privacy">🔒 Your documents are processed temporarily and never stored.</p>
+      </footer>
+    </main>
+  </div>
+
+  <script src="./app.js" type="module"></script>
+</body>
+</html>

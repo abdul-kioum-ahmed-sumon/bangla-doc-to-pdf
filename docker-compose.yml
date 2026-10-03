@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - MAX_FILE_SIZE=20971520
+      - CONVERSION_TIMEOUT=120
+      - CORS_ORIGINS=*
+      - RATE_LIMIT_WINDOW=60
+      - RATE_LIMIT_MAX=10
+    restart: unless-stopped
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: "2"
+    # Health check
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s

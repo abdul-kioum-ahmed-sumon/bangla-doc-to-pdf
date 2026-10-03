@@ -1,0 +1,14 @@
+{
+  "name": "bangla-doc-to-pdf-frontend",
+  "version": "1.0.0",
+  "description": "Frontend for Bangla Word to PDF Converter",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  }
+}
