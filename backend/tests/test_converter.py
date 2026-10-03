@@ -54,6 +54,30 @@ class TestBijoyToUnicode:
         result = bijoy_to_unicode("Kv")
         assert "কা" in result or "া" in result
 
+    def test_khetlal_title(self):
+        """ÿ (ANSI 255) maps to ক্ষ (ksh)."""
+        result = bijoy_to_unicode("‡ÿZjvj")
+        assert result == "ক্ষেতলাল"
+
+    def test_officer_in_charge_trailing_ref(self):
+        """Trailing Ref in 'BbPvR©' must convert cleanly to 'ইনচার্জ' without IndexError."""
+        result = bijoy_to_unicode("Rbve †gvt gy³viæj Avjg Awdmvi BbPvR©")
+        assert result == "জনাব মোঃ মুক্তারুল আলম অফিসার ইনচার্জ"
+
+    def test_kormoroto_and_forces(self):
+        """Test 'Kg©iZ' -> 'কর্মরত' and '†dvm©‡`i' -> 'ফোর্সদের'."""
+        assert bijoy_to_unicode("Kg©iZ") == "কর্মরত"
+        assert bijoy_to_unicode("†dvm©‡`i") == "ফোর্সদের"
+
+    def test_split_run_e_kar_and_merged_title(self):
+        """Merged title containing 'bv‡gi' converts to 'নামের'."""
+        text = "‡ÿZjvj _vbvq Kg©iZ Awdmvi‡`i bv‡gi ZvwjKvmn wbR †Rjvi Z_¨t "
+        result = bijoy_to_unicode(text)
+        assert "ক্ষেতলাল" in result
+        assert "কর্মরত" in result
+        assert "অফিসারদের" in result
+        assert "নামের" in result
+
 
 # ── Font Detection Tests ─────────────────────────────────────
 
@@ -140,6 +164,79 @@ class TestFontDetection:
         result = detect_fonts(doc)
         assert result.has_legacy_fonts is True
         assert "SutonnyMJ" in result.legacy_font_names
+
+
+# ── DOCX Conversion Tests ────────────────────────────────────
+
+
+class TestDocxConversion:
+    """Tests for DOCX manipulation and Bijoy to Unicode document conversion."""
+
+    def test_to_bengali_number(self):
+        from app.converter import to_bengali_number
+
+        assert to_bengali_number(1) == "১"
+        assert to_bengali_number(2) == "২"
+        assert to_bengali_number(10) == "১০"
+        assert to_bengali_number(20) == "২০"
+
+    def test_convert_bijoy_in_docx_merges_runs(self, tmp_path):
+        from app.converter import convert_bijoy_in_docx
+
+        doc = Document()
+        p = doc.add_paragraph()
+        r1 = p.add_run("bv‡")
+        r1.font.name = "SutonnyMJ"
+        r2 = p.add_run("gi")
+        r2.font.name = "SutonnyMJ"
+
+        in_file = tmp_path / "split.docx"
+        out_file = tmp_path / "merged.docx"
+        doc.save(in_file)
+
+        result = convert_bijoy_in_docx(in_file, out_file)
+        assert result["bijoy_detected"] is True
+
+        merged_doc = Document(out_file)
+        assert merged_doc.paragraphs[0].text == "নামের"
+
+    def test_convert_bijoy_in_docx_table_serial_numbers(self, tmp_path):
+        from app.converter import convert_bijoy_in_docx
+        from docx.oxml.ns import qn
+
+        doc = Document()
+        table = doc.add_table(rows=3, cols=2)
+        # Header
+        table.rows[0].cells[0].text = "ক্রমিক"
+        table.rows[0].cells[1].text = "নাম"
+
+        # Row 1 with digit 1.
+        cell_r1 = table.rows[1].cells[0]
+        p1 = cell_r1.paragraphs[0]
+        p1.text = "1."
+        r1 = table.rows[1].cells[1].paragraphs[0].add_run("K")
+        r1.font.name = "SutonnyMJ"
+
+        # Row 2 with empty text but numPr
+        cell_r2 = table.rows[2].cells[0]
+        p2 = cell_r2.paragraphs[0]
+        pPr = p2._p.get_or_add_pPr()
+        numPr = pPr.makeelement(qn("w:numPr"))
+        numPr.append(pPr.makeelement(qn("w:ilvl"), {qn("w:val"): "0"}))
+        numPr.append(pPr.makeelement(qn("w:numId"), {qn("w:val"): "3"}))
+        pPr.append(numPr)
+        r2 = table.rows[2].cells[1].paragraphs[0].add_run("K")
+        r2.font.name = "SutonnyMJ"
+
+        in_file = tmp_path / "table.docx"
+        out_file = tmp_path / "table_out.docx"
+        doc.save(in_file)
+
+        convert_bijoy_in_docx(in_file, out_file)
+        out_doc = Document(out_file)
+        out_table = out_doc.tables[0]
+        assert out_table.rows[1].cells[0].text.strip() == "১."
+        assert out_table.rows[2].cells[0].text.strip() == "২."
 
 
 # ── Cleanup Tests ────────────────────────────────────────────

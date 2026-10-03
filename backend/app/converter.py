@@ -172,6 +172,35 @@ def is_word_available() -> bool:
     return _WORD_AVAILABLE
 
 
+_BENGALI_DIGITS = str.maketrans("0123456789", "০১২৩৪৫৬৭৮৯")
+
+
+def to_bengali_number(n: int) -> str:
+    """Convert an integer to Bengali numeral string."""
+    return str(n).translate(_BENGALI_DIGITS)
+
+
+def _set_run_font(run: Run, replacement_font: str) -> None:
+    """Set the font of a run across OpenXML font attributes."""
+    run.font.name = replacement_font
+    rpr = run._element.find(qn("w:rPr"))
+    if rpr is not None:
+        rfonts = rpr.find(qn("w:rFonts"))
+        if rfonts is not None:
+            for attr in ["w:ascii", "w:hAnsi", "w:cs", "w:eastAsia"]:
+                rfonts.set(qn(attr), replacement_font)
+        else:
+            rfonts = rpr.makeelement(
+                qn("w:rFonts"),
+                {
+                    qn("w:ascii"): replacement_font,
+                    qn("w:hAnsi"): replacement_font,
+                    qn("w:cs"): replacement_font,
+                },
+            )
+            rpr.insert(0, rfonts)
+
+
 def _convert_run_text(
     run: Run,
     font_name: str | None,
@@ -203,30 +232,8 @@ def _convert_run_text(
     if converted_text == original_text:
         return False
 
-    # Update run text
     run.text = converted_text
-
-    # Update font name
-    run.font.name = replacement_font
-
-    # Update rFonts XML attributes
-    rpr = run._element.find(qn("w:rPr"))
-    if rpr is not None:
-        rfonts = rpr.find(qn("w:rFonts"))
-        if rfonts is not None:
-            for attr in ["w:ascii", "w:hAnsi", "w:cs", "w:eastAsia"]:
-                rfonts.set(qn(attr), replacement_font)
-        else:
-            rfonts = rpr.makeelement(
-                qn("w:rFonts"),
-                {
-                    qn("w:ascii"): replacement_font,
-                    qn("w:hAnsi"): replacement_font,
-                    qn("w:cs"): replacement_font,
-                },
-            )
-            rpr.insert(0, rfonts)
-
+    _set_run_font(run, replacement_font)
     return True
 
 
@@ -235,14 +242,49 @@ def _process_paragraphs(
     doc_default: str | None,
     replacement_font: str,
 ) -> int:
-    """Process all paragraphs, converting Bijoy text in each run."""
+    """Process all paragraphs, grouping adjacent Bijoy runs to preserve multi-run ligatures."""
     converted_count = 0
     for paragraph in paragraphs:
         para_font = _get_paragraph_default_font(paragraph)
-        for run in paragraph.runs:
+        runs = paragraph.runs
+        if not runs:
+            continue
+
+        i = 0
+        while i < len(runs):
+            run = runs[i]
             font_name = _get_run_font_name(run) or para_font
-            if _convert_run_text(run, font_name, doc_default, replacement_font):
-                converted_count += 1
+            effective_font = font_name or doc_default
+            if not is_legacy_bijoy_run(run, effective_font):
+                i += 1
+                continue
+
+            # Group adjacent Bijoy runs to prevent vowel-sign / pre-kar splits
+            group = [run]
+            j = i + 1
+            while j < len(runs):
+                next_run = runs[j]
+                next_font = _get_run_font_name(next_run) or para_font
+                next_effective = next_font or doc_default
+                if is_legacy_bijoy_run(next_run, next_effective):
+                    group.append(next_run)
+                    j += 1
+                else:
+                    break
+
+            combined_text = "".join(r.text for r in group)
+            converted_text = bijoy_to_unicode(combined_text)
+
+            group[0].text = converted_text
+            _set_run_font(group[0], replacement_font)
+            converted_count += 1
+
+            for extra_run in group[1:]:
+                extra_run.text = ""
+                paragraph._p.remove(extra_run._r)
+
+            i = j
+
     return converted_count
 
 
@@ -273,7 +315,26 @@ def convert_bijoy_in_docx(
 
     # Tables
     for table in doc.tables:
-        for row in table.rows:
+        for r_idx, row in enumerate(table.rows):
+            # Handle serial number column (cell 0) with automatic w:numPr numbering
+            if r_idx > 0 and len(row.cells) > 0:
+                cell0 = row.cells[0]
+                for p in cell0.paragraphs:
+                    pPr = p._p.pPr
+                    has_numPr = pPr is not None and pPr.find(qn("w:numPr")) is not None
+                    clean_p_text = p.text.strip()
+                    is_serial_num = clean_p_text.isdigit() or (
+                        clean_p_text.endswith(".") and clean_p_text[:-1].isdigit()
+                    )
+                    if has_numPr or is_serial_num:
+                        if pPr is not None:
+                            numPr = pPr.find(qn("w:numPr"))
+                            if numPr is not None:
+                                pPr.remove(numPr)
+                        p.text = f"{to_bengali_number(r_idx)}."
+                        for r in p.runs:
+                            _set_run_font(r, target_font)
+
             for cell in row.cells:
                 total_converted += _process_paragraphs(cell.paragraphs, doc_default, target_font)
 
