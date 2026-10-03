@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: bangla-doc-to-pdf
+    runtime: docker
+    plan: free
+    region: oregon
+    healthCheckPath: /health
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: CORS_ORIGINS
+        value: "*"
+      - key: MAX_FILE_SIZE
+        value: "20971520"
+      - key: CONVERSION_TIMEOUT
+        value: "120"

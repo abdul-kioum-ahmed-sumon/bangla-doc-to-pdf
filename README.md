@@ -9,6 +9,9 @@ Supports both **Unicode Bengali** and **legacy Bijoy/ANSI** (SutonnyMJ, SutonnyO
 ![LibreOffice](https://img.shields.io/badge/LibreOffice-headless-orange)
 ![Docker](https://img.shields.io/badge/Docker-ready-blue)
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/abdul-kioum-ahmed-sumon/bangla-doc-to-pdf)
+
+
 ---
 
 ## Table of Contents
