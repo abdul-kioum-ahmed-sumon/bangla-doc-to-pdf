@@ -230,9 +230,19 @@ convertBtn.addEventListener('click', async () => {
     // Extract filename from Content-Disposition header
     const disposition = response.headers.get('Content-Disposition');
     if (disposition) {
-      const match = disposition.match(/filename="?([^";\n]+)"?/);
-      if (match) {
-        pdfFilename = match[1];
+      const utf8Match = disposition.match(/filename\*=(?:UTF-8|utf-8)''([^;\n]+)/i);
+      if (utf8Match) {
+        try {
+          pdfFilename = decodeURIComponent(utf8Match[1]);
+        } catch {
+          // ignore error
+        }
+      }
+      if (!pdfFilename) {
+        const match = disposition.match(/filename="?([^";\n]+)"?/);
+        if (match && match[1] !== 'converted.pdf') {
+          pdfFilename = match[1];
+        }
       }
     }
     if (!pdfFilename) {

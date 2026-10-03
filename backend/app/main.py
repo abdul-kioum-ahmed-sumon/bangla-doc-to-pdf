@@ -19,8 +19,10 @@ import time
 import uuid
 from pathlib import Path
 
+from urllib.parse import quote
+
 import magic
-from fastapi import FastAPI, File, HTTPException, Request, UploadFile
+from fastapi import FastAPI, File, HTTPException, Request, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -230,40 +232,20 @@ async def convert_docx_to_pdf(
         pdf_content = pdf_path.read_bytes()
 
     # ── Build response ──
-    # Generate output filename
+    # Generate output filename (RFC 5987 / RFC 6266 compliant for Unicode/Bengali characters)
     original_stem = Path(safe_name).stem
     output_filename = f"{original_stem}.pdf"
+    encoded_filename = quote(output_filename)
 
-    return FileResponse(
-        # We need to write to a temp file for FileResponse
-        # Actually, let's use a Response with content directly
-        path=_write_temp_response(pdf_content, output_filename),
+    return Response(
+        content=pdf_content,
         media_type="application/pdf",
-        filename=output_filename,
         headers={
-            "Content-Disposition": f'attachment; filename="{output_filename}"',
+            "Content-Disposition": f'attachment; filename="converted.pdf"; filename*=UTF-8\'\'{encoded_filename}',
             "X-Bijoy-Detected": str(conversion_info.get("bijoy_detected", False)).lower(),
             "X-Runs-Converted": str(conversion_info.get("runs_converted", 0)),
         },
-        background=None,
     )
-
-
-def _write_temp_response(content: bytes, filename: str) -> str:
-    """Write PDF content to a temporary file for FileResponse.
-
-    The file is created in the system temp directory and will be
-    cleaned up by the OS.
-    """
-    import tempfile
-
-    # Create a temp file that won't be auto-deleted
-    fd, path = tempfile.mkstemp(suffix=".pdf", prefix="response_")
-    try:
-        os.write(fd, content)
-    finally:
-        os.close(fd)
-    return path
 
 
 # ── Serve frontend index.html as fallback ────────────────────
